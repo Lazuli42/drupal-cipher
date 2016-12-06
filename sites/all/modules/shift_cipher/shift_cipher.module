@@ -1,0 +1,110 @@
+<?php
+
+  function shift_cipher_menu() {
+    $items['shift_cipher'] = array(
+        'title' => 'Shift Cipher',
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('shift_cipher_form'),
+        'access callback' => TRUE,
+        'type' => MENU_NORMAL_ITEM,
+    );
+    $items['shift_cipher_result'] = array(
+      'title' => 'Shift Cipher',
+      'page callback' => 'shift_cipher_encrypted',
+      'access callback' => TRUE,
+      'type' => MENU_CALLBACK,
+    );
+    return $items;
+  }
+
+  function shift_cipher_form() {
+    $form['shift_value'] = array(
+      '#title' => 'Shift Value',
+      '#type' => 'textfield',
+      '#description' => t('The number of times to shift the alphabet.'),
+      '#element_validate' => array('element_validate_integer_positive'),
+      '#required' => TRUE,
+    );
+    $form['direction'] = array(
+      '#title' => 'Direction',
+      '#type' => 'textfield',
+      '#description' => t('The direction to shift the alphabet (Left or Right)'),
+      '#element_validate' => array('element_validate_left_right'),
+      '#required' => TRUE,
+    );
+    $form['phrase'] = array(
+      '#title' => 'Phrase',
+      '#type' => 'textarea',
+      '#description' => t('The words to be encrypted.'),
+      '#element_validate' => array('element_validate_letters'),
+      '#required' => TRUE,
+    );
+    $form['submit'] = array(
+      '#type' => 'submit',
+      '#value' => 'Encrypt',
+    );
+    return $form;
+  }
+
+  function element_validate_left_right($element) {
+    if(!strtolower($element['#value']) == 'left' || !strtolower($element['#value']) == 'right') {
+      form_error($element, t('You must enter "left" or "right".'));
+    }
+  }
+
+  function element_validate_letters($element) {
+    $inputs = str_split($element['#value']);
+    $other_characters = array(' ', '.', '!', '?', ',', "'");
+    foreach ($inputs as $input) {
+      if (!ctype_alpha($input)) {
+        if (!in_array($input, $other_characters)) {
+          form_error($element, t('You can only encrypt letters from the alphabet.'));
+        }
+      }
+    }
+  }
+
+  function shift_cipher_form_submit($form, &$form_state) {
+    $shift_value = $form_state['values']['shift_value'];
+    $_SESSION['shift_value'] = $shift_value;
+    $direction = strtolower($form_state['values']['direction']);
+    $_SESSION['original_phrase'] = $form_state['values']['phrase'];
+    $original_letters = str_split(strtolower($form_state['values']['phrase']));
+    $encrypted_phrase = array();
+
+    foreach ($original_letters as $letter) {
+      if (ctype_alpha($letter)) {
+        $letter_value = ord($letter);
+        if ($direction == 'right') {
+          $letter_value += $shift_value;
+          if ($letter_value > 122) {
+            while ($letter_value > 122) {
+              $letter_value -= 26;
+            }
+          }
+        } else if ($direction == 'left') {
+          $letter_value -= $shift_value;
+          if ($letter_value < 97) {
+            while ($letter_value < 97) {
+              $letter_value += 26;
+            }
+          }
+        }
+        $new_letter = chr($letter_value);
+        $encrypted_phrase[] = $new_letter;
+      } else {
+        $encrypted_phrase[] = $letter;
+      }
+
+    }
+    $_SESSION['encrypted_phrase'] = implode($encrypted_phrase);
+
+    $form_state['redirect'] = 'shift_cipher_result';
+}
+
+function shift_cipher_encrypted() {
+  if ($_SESSION['shift_value'] % 26 == 0) {
+    drupal_set_message(t("Shifting by multiples of 26 won't encrypt anything..."));
+  }
+  return '<b>Encrypted Text:</b> ' . $_SESSION['encrypted_phrase'];
+}
