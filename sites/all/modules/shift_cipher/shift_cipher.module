@@ -75,6 +75,7 @@
     }
     $_SESSION['shift_value'] = $shift_value;
     $direction = strtolower($form_state['values']['direction']);
+    $_SESSION['direction'] = $direction;
     $_SESSION['original_phrase'] = $form_state['values']['phrase'];
     $original_letters = str_split(strtolower($form_state['values']['phrase']));
     $encrypted_phrase = array();
