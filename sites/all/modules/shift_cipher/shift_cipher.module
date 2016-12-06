@@ -23,7 +23,10 @@
       '#type' => 'textfield',
       '#description' => t('The number of times to shift the alphabet.'),
       '#element_validate' => array('element_validate_integer_positive'),
-      '#required' => TRUE,
+    );
+    $form['random_value'] = array(
+      '#title' => 'Generate a random value.',
+      '#type' => 'checkbox',
     );
     $form['direction'] = array(
       '#title' => 'Direction',
@@ -65,7 +68,11 @@
   }
 
   function shift_cipher_form_submit($form, &$form_state) {
-    $shift_value = $form_state['values']['shift_value'];
+    if ($form_state['values']['random_value']) {
+      $shift_value = mt_rand(1, 25);
+    } else {
+      $shift_value = $form_state['values']['shift_value'];
+    }
     $_SESSION['shift_value'] = $shift_value;
     $direction = strtolower($form_state['values']['direction']);
     $_SESSION['original_phrase'] = $form_state['values']['phrase'];
@@ -106,5 +113,10 @@ function shift_cipher_encrypted() {
   if ($_SESSION['shift_value'] % 26 == 0) {
     drupal_set_message(t("Shifting by multiples of 26 won't encrypt anything..."));
   }
-  return '<b>Encrypted Text:</b> ' . $_SESSION['encrypted_phrase'];
+  return
+    '<h3>Original Text:</h3>' .
+    '<p>' . $_SESSION['original_phrase'] . '</p>' .
+    '<h3>Encrypted Text:</h3> ' .
+    '<p>' . $_SESSION['encrypted_phrase'] . '</p>'
+  ;
 }
